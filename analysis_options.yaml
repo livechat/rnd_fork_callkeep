@@ -30,8 +30,10 @@ linter:
     - use_rethrow_when_possible
     - valid_regexps
     - void_checks
-  
+
 analyzer:
+  exclude:
+    - example
   errors:
     # treat missing required parameters as a warning (not a hint)
     missing_required_param: warning
