@@ -24,13 +24,16 @@ import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.ComponentName;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.provider.CallLog;
 import android.telecom.Connection;
 import android.telecom.ConnectionRequest;
 import android.telecom.ConnectionService;
@@ -72,6 +75,8 @@ public class VoiceConnectionService extends ConnectionService {
     public static VoiceConnectionService currentConnectionService = null;
     public static ConstraintsMap _settings = null;
 
+    static ContentResolver _resolver;
+
     public static Connection getConnection(String connectionId) {
         if (currentConnections.containsKey(connectionId)) {
             return currentConnections.get(connectionId);
@@ -106,8 +111,9 @@ public class VoiceConnectionService extends ConnectionService {
         isAvailable = value;
     }
 
-    public static void setSettings(ConstraintsMap settings) {
+    public static void setSettings(ConstraintsMap settings, ContentResolver resolver) {
         _settings = settings;
+        _resolver = resolver;
     }
 
     public static void setReachable() {
@@ -117,7 +123,7 @@ public class VoiceConnectionService extends ConnectionService {
     }
 
     public static void deinitConnection(String connectionId) {
-        Log.d(TAG, "deinitConnection:" + connectionId);
+        Log.d(TAG, "! deinitConnection:" + connectionId);
         VoiceConnectionService.hasOutgoingCall = false;
 
         currentConnectionService.stopForegroundService();
@@ -125,6 +131,10 @@ public class VoiceConnectionService extends ConnectionService {
         if (currentConnections.containsKey(connectionId)) {
             currentConnections.remove(connectionId);
         }
+
+        String componentName = phoneAccountHandle.getComponentName().flattenToString();
+        String queryString = CallLog.Calls.PHONE_ACCOUNT_COMPONENT_NAME + " = '"+componentName+"'";
+        _resolver.delete(CallLog.Calls.CONTENT_URI, queryString, null);
     }
 
     @Override
@@ -314,7 +324,7 @@ public class VoiceConnectionService extends ConnectionService {
         HashMap<String, String> extrasMap = this.bundleToMap(extras);
         extrasMap.put(EXTRA_CALL_NUMBER, request.getAddress().toString());
         VoiceConnection connection = new VoiceConnection(this, extrasMap);
-        connection.setConnectionCapabilities(Connection.CAPABILITY_MUTE | Connection.CAPABILITY_SUPPORT_HOLD);
+        //connection.setConnectionCapabilities(Connection.CAPABILITY_MUTE | Connection.CAPABILITY_SUPPORT_HOLD);
 
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             Context context = getApplicationContext();

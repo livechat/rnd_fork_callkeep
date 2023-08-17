@@ -27,10 +27,12 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.graphics.drawable.Icon;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.CallLog;
 import android.telecom.CallAudioState;
 import android.telecom.Connection;
 import android.telecom.PhoneAccount;
@@ -74,7 +76,7 @@ public class CallKeepModule {
     private static final String E_ACTIVITY_DOES_NOT_EXIST = "E_ACTIVITY_DOES_NOT_EXIST";
     private static final String REACT_NATIVE_MODULE_NAME = "CallKeep";
     private static final String[] permissions = { Manifest.permission.READ_PHONE_STATE,
-            Manifest.permission.CALL_PHONE, Manifest.permission.RECORD_AUDIO , Manifest.permission.READ_PHONE_NUMBERS };
+            Manifest.permission.CALL_PHONE, Manifest.permission.RECORD_AUDIO , Manifest.permission.READ_PHONE_NUMBERS, Manifest.permission.WRITE_CALL_LOG, Manifest.permission.READ_CALL_LOG };
 
     private static final String TAG = "FLT:CallKeepModule";
     private static TelecomManager telecomManager;
@@ -209,7 +211,7 @@ public class CallKeepModule {
             }
             break;
             case "foregroundService": {
-                VoiceConnectionService.setSettings(new ConstraintsMap((Map<String, Object>)call.argument("settings")));
+                VoiceConnectionService.setSettings(new ConstraintsMap((Map<String, Object>)call.argument("settings")), _context.getContentResolver());
                 result.success(null);
             }
             break;
@@ -240,7 +242,7 @@ public class CallKeepModule {
             VoiceConnectionService.setAvailable(true);
         }
 
-        VoiceConnectionService.setSettings(options);
+        VoiceConnectionService.setSettings(options, getAppContext().getContentResolver());
     }
     
     public void registerPhoneAccount() {

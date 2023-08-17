@@ -31,15 +31,15 @@ class FlutterCallkeep extends EventManager {
   static const MethodChannel _event = MethodChannel('FlutterCallKeep.Event');
   BuildContext? _context;
 
-  Future<void> setup(BuildContext? context, Map<String, dynamic> options,
+  Future<bool> setup(BuildContext? context, Map<String, dynamic> options,
       {bool backgroundMode = false}) async {
     _context = context;
     if (!isIOS) {
-      await _setupAndroid(
+      return await _setupAndroid(
           options['android'] as Map<String, dynamic>, backgroundMode);
-      return;
     }
     await _setupIOS(options['ios'] as Map<String, dynamic>);
+    return false;
   }
 
   Future<void> registerPhoneAccount() async {
@@ -57,7 +57,7 @@ class FlutterCallkeep extends EventManager {
     return _channel.invokeMethod<void>('registerEvents', <String, dynamic>{});
   }
 
-  Future<bool> hasDefaultPhoneAccount(
+  Future<bool> showPhoneAccountAlertIfNeeded(
       BuildContext context, Map<String, dynamic> options) async {
     _context = context;
     if (!isIOS) {
@@ -68,13 +68,13 @@ class FlutterCallkeep extends EventManager {
     return true;
   }
 
-  Future<bool?> _checkDefaultPhoneAccount() async {
+  Future<bool?> checkDefaultPhoneAccount() async {
     return await _channel
         .invokeMethod<bool>('checkDefaultPhoneAccount', <String, dynamic>{});
   }
 
   Future<bool> _hasDefaultPhoneAccount(Map<String, dynamic> options) async {
-    final hasDefault = await _checkDefaultPhoneAccount();
+    final hasDefault = await checkDefaultPhoneAccount();
     final shouldOpenAccounts = await _alert(options, hasDefault);
     if (shouldOpenAccounts) {
       await _openPhoneAccounts();
@@ -319,7 +319,7 @@ class FlutterCallkeep extends EventManager {
     }
 
     final additionalPermissions = options['additionalPermissions'] ?? [];
-    final showAccountAlert = await _checkPhoneAccountPermission(
+    final showAccountAlert = await checkPhoneAccountPermission(
         additionalPermissions.cast<String>() as List<String>);
     final shouldOpenAccounts = await _alert(options, showAccountAlert);
 
@@ -339,7 +339,7 @@ class FlutterCallkeep extends EventManager {
     await _channel.invokeMethod<void>('openPhoneAccounts', <String, dynamic>{});
   }
 
-  Future<bool> _checkPhoneAccountPermission(
+  Future<bool> checkPhoneAccountPermission(
       List<String>? optionalPermissions) async {
     if (!Platform.isAndroid) {
       return true;
